@@ -1,0 +1,13 @@
+body {
+  color: red;
+}
+body {
+  background: skyblue;
+  -webkit-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+          transform: rotate(45deg);
+}
+body div {
+  border: 1px solid yellow;
+}
+

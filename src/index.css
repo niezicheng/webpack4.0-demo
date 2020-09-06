@@ -1,0 +1,5 @@
+@import './a.css';
+body {
+  background: skyblue;
+  transform: rotate(45deg);
+}
