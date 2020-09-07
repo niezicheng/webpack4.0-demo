@@ -162,6 +162,26 @@ package.json
 
 
 
+##### expose-loader
+
+```js
+/** js文件中 **/
+export $ from 'jquery'
+console.log(window.$); // jQuery
+console.log($); // jQuery
+
+// 暴露第三方模块到全局对象中
+{
+  test: require.resolve('jquery'),
+  loader: 'expose-loader',
+  options: {
+    exposes: ['$', 'jQuery'],
+  },
+},
+```
+
+
+
 
 
 #### 插件 plugins
@@ -230,6 +250,36 @@ plugins: [
 
 
 
+##### webpack
+
+###### ProvidePlugin
+
+```js
+const webpack = require('webpack');
+
+plugins: [
+    // 在每个模块中注入 $
+    new webpack.ProvidePlugin({
+        $: 'jquery',
+    })
+]
+```
+
+
+
+##### externals 不从 bundle 中引用依赖
+
+```js
+// 引入第三方库时，webpack build 时不进行打包
+externals: {
+    jquery: '$'
+},
+```
+
+
+
+
+
 #### 完整的 webpack.config.js 文件
 
 **webpack.config.js 或 webpackfile.js**
@@ -282,6 +332,14 @@ module.exports = {
     // loader
     module: {
         rules: [
+            // 暴露第三方模块到全局对象中
+            {
+                test: require.resolve('jquery'),
+                loader: 'expose-loader',
+                options: {
+                  exposes: ['$', 'jQuery'],
+                },
+              },
             // 对js文件使用eslint进行语法校验
             {
                 test: /\.js$/,
@@ -361,8 +419,18 @@ module.exports = {
         // 从出口js文件中分离出单独的样式文件
         new MiniCssExtractPlugin({
             filename: 'main.css',  // 所有【单个】样式文件分离出来的css文件名称
+        }),
+        
+        // 在每个模块中注入 $
+        new webpack.ProvidePlugin({
+            $: 'jquery',
         })
-    ]
+    ],
+    
+    // 引入第三方库 jquery 时不打包
+    externals: {
+       	jquery: '$'
+    },
 }
 ```
 
@@ -381,9 +449,19 @@ module.exports = {
     "build": "webpack --config webpackfile.js"
   },
   "devDependencies": {
+    "@babel/core": "^7.10.3",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/plugin-proposal-decorators": "^7.10.3",
+    "@babel/plugin-transform-runtime": "^7.10.3",
+    "@babel/preset-env": "^7.10.3",
     "autoprefixer": "^9.8.2",
+    "babel-loader": "^8.1.0",
     "css-loader": "^3.6.0",
+    "eslint": "^7.8.1",
+    "eslint-loader": "^4.0.2",
+    "expose-loader": "^1.0.0",
     "html-webpack-plugin": "^4.3.0",
+    "jquery": "^3.5.1",
     "less": "^3.11.3",
     "less-loader": "^6.1.2",
     "mini-css-extract-plugin": "^0.9.0",
@@ -395,11 +473,15 @@ module.exports = {
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   },
-  "browserslist": [ // 	使用postcss-loader中的autoprefixer插件添加浏览器前缀需要配置
+  "browserslist": [
     "last 10 versions",
     ">1%",
     "ios 7"
-  ]
+  ],
+  "dependencies": {
+    "@babel/polyfill": "^7.10.1",
+    "@babel/runtime": "^7.10.3"
+  }
 }
 
 ```
@@ -428,4 +510,13 @@ module.exports = {
         "static"
     ]
   }
+  ```
+
+- 引入第三方模块的方式
+
+  ```js
+  // 引入第三方模块的三种方式
+      1、expose-loader 暴露到window
+      2、ProviderPlugin 给每个模块文件提供第三方模块
+      3、externals 引入不打包
   ```

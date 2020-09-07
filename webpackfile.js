@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   optimization: {
@@ -30,20 +31,34 @@ module.exports = {
     }),
     new MiniCssExtractPlugin({
       filename: 'main.css',
-    })
+    }),
+    // new webpack.ProvidePlugin({ // 在每个模块中注入 $
+    //   $: 'jquery',
+    // })
   ],
+
+  externals: {
+    jquery: '$'
+  },
 
   module: {
     rules: [
-      {
-        test: /\.js$/,
-        use: {
-          loader: 'eslint-loader',
-          options: {
-            enforce: 'pre' // previous post[normal之后执行]
-          }
-        }
-      },
+      // {
+      //   test: require.resolve('jquery'),
+      //   loader: 'expose-loader',
+      //   options: {
+      //     exposes: ['$', 'jQuery'],
+      //   },
+      // },
+      // {
+      //   test: /\.js$/,
+      //   use: {
+      //     loader: 'eslint-loader',
+      //     options: {
+      //       enforce: 'pre' // previous post[normal之后执行]
+      //     }
+      //   }
+      // },
       {
         test: /\.js/, // normal 普通的loader
         use: {
