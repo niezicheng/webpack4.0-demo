@@ -1,6 +1,238 @@
 ### webpack4基本配置信息
 
-#### webpack.config.js 或 webpackfile.js
+#### 入口 entry
+
+```js
+entry: './src/index.js'
+```
+
+
+
+#### 出口 output
+
+```js
+output: {
+    filename: 'bundle.[hash:8].js', // 使用hash文件有更改时，每次打包产生不同的文件
+    path: path.resolve(__dirname, 'dist') // 打包后文件保存路径
+},
+```
+
+
+
+#### 环境配置 mode
+
+```js
+// 打包模式，环境配置
+mode: 'production', // 生产环境
+// mode: 'development', // 开发环境
+```
+
+
+
+#### 模块 loader
+
+##### babel-loader
+
+```js
+ // 打包后对匹配的js文件语法转换及提供语法支持
+            {
+                test: /\.js/,
+                use: {
+                    loader: 'babel-loader',
+                    options: { // 用babel-loader，将es6 -> es5，也可以将该设置在.babelrc文件中设置
+                        presets: [ // 预设
+                            '@babel/preset-env'
+                        ],
+                        plugins: [
+                            // loader中的小插件，转换更高级的es语法，如class类
+                            // '@babel/plugin-proposal-class-properties'
+
+                            // js高级语法 装饰器插件【实验阶段，但可以支持】
+                            ["@babel/plugin-proposal-decorators", { "legacy": true }],
+                            ["@babel/plugin-proposal-class-properties", { "loose" : true }],
+                            // 1、配置es6 -> es5 或者更高级的语法时均会使用到 development
+                            // 2、多个js文件中使用class类并打包后，将相同校验类_classCallCheck抽离为公共方法
+                            // 3、会为输出代码注入一些脚本，需要安装@babel/runting补丁，上线【production】的时候也需要
+                            "@babel/plugin-transform-runtime" // 代码运行时的包
+                        ]
+                    }
+                },
+                include: path.resolve(__dirname, 'src'), // 查找解析src下面的js文件
+                exclude: /node_module/ // 排除查找匹配node_module下的js文件
+            },
+```
+
+
+
+###### @babel/polyfill
+
+**js一些高级语法的支持**
+
+如：Es7中的includes() 方法
+
+```shell
+yarn add @babel/polyfill
+```
+
+需要使用高级js语法文件中引入：
+
+```js
+import '@babel/polyfill';
+
+// 引入@babel/polyfill打包后会帮我们自动在原型上添加实现该方法，如果没有引入打包后js文件中该方法原样输出
+'str'.includes();
+```
+
+
+
+
+##### eslint-loader
+
+```js
+// 对js文件使用eslint进行语法校验
+{
+    test: /\.js$/,
+        use: {
+            loader: 'eslint-loader', // 在对应的eslint官网下载对应的.eslintrc.json文件
+                options: {
+                    enforce: 'pre' // 默认为 normal, pre在normal前执行, post 在normal后执行
+                }
+        }
+}
+```
+
+###### .eslintrc.json 文件
+
+官网配置下载
+
+
+
+##### css-loader、less-loader
+
+```js
+// css-loader 主要解析@import这种语法
+// style-loader 将css插入到head标签中去
+// loader 特点，希望单一
+// loader 用法：单个使用字符串，多个可以使用数组，可以写成一个对象，添加options参数
+// loader 顺序： 从右向左，从下往上
+// style-loader: 在main.js内提供了一个能将css动态插入到head中
+{
+    test: /\.css$/,
+        use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader', // css-loader：将导入项目的css变为js模块，打包到main.js内
+            'postcss-loader'
+        ]
+},
+{
+    test: /\.less$/,
+        use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader',
+            'postcss-loader', // 可以结合postcss.config.js文件中配置的autoprefixer插件为浏览器添加兼容前缀
+            'less-loader'
+        ]
+}
+
+```
+
+###### postcss-loader
+
+postcss.config.js
+
+```js
+module.exports = {
+  plugins: [
+    // 集合package.json中的browserlist配置给css样式添加浏览器兼容前缀
+    require('autoprefixer')
+  ]
+}
+```
+
+package.json
+
+```js
+// 	使用postcss-loader中的autoprefixer插件添加浏览器前缀需要配置
+"browserslist": [
+    "last 10 versions",
+    ">1%",
+    "ios 7"
+]
+```
+
+
+
+
+
+#### 插件 plugins
+
+##### html-webpack-plugin 模板文件
+
+```js
+// 模板文件
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+plugins: [
+    	// js入口文件导入模板文件并打包生成新的文件
+        new HtmlWebpackPlugin({
+            template: './src/index.html',  //模板文件路径
+            filename: 'index.html', // 打包模板文件名称
+            minify: { // 未设置时候，html代码是压缩为一行，但一些其他的未压缩
+                removeAttributeQuotes: true, // 去除标签属性双引号
+                collapseWhitespace: true, // 设置minify需要设置将其压缩为一行
+            },
+            hash: true, // 打包模板后添加hash戳，缓存问题
+        }),
+        
+        // 从出口js文件中分离出单独的样式文件
+        new MiniCssExtractPlugin({
+            filename: 'main.css',  // 所有【单个】样式文件分离出来的css文件名称
+        })
+    ]
+}
+```
+
+
+
+##### mini-css-extract-plugin 提取单独的 css 文件
+
+```js
+// 提出单独的css样式文件，并以link的方式插入到head中
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+// 压缩单独提出的css文件，只用于production模式【但原本压缩的js出口文件又不会压缩了，结合terser-webpack-plugin插件使用使JS压缩】
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+// 结合OptimizeCSSAssetsPlugin使用production下压缩出口js文件
+const TerserWebpackPlugin = require('terser-webpack-plugin');
+
+// 优化项配置【production下才会生效】
+optimization: {
+    minimizer: [
+        // 压缩由mini-css-extract-plugin分离出来的css文件
+        new OptimizeCSSAssetsPlugin(), 
+        // 压缩打包后的js文件
+        new TerserWebpackPlugin() 
+    ]
+},
+
+// 插件 Plugins
+plugins: [
+        // 从出口js文件中分离出单独的样式文件
+        new MiniCssExtractPlugin({
+            filename: 'main.css',  // 所有【单个】样式文件分离出来的css文件名称
+        })
+    ]
+}
+```
+
+###### optimize-css-assets-webpack-plugin
+
+###### terser-webpack-plugin 
+
+
+
+#### 完整的 webpack.config.js 文件
+
+**webpack.config.js 或 webpackfile.js**
 
 ```js
 const path = require('path');
@@ -50,6 +282,16 @@ module.exports = {
     // loader
     module: {
         rules: [
+            // 对js文件使用eslint进行语法校验
+            {
+                test: /\.js$/,
+                use: {
+                    loader: 'eslint-loader', // 在对应的eslint官网下载对应的.eslintrc.json文件
+                    options: {
+                        enforce: 'pre' // 默认为 normal, pre在normal前执行, post 在normal后执行
+                    }
+                }
+            }
             // 打包后对匹配的js文件语法转换及提供语法支持
             {
                 test: /\.js/,
@@ -124,18 +366,9 @@ module.exports = {
 }
 ```
 
-#### postcss.config.js
 
-```js
-module.exports = {
-  plugins: [
-    // 集合package.json中的browserlist配置给css样式添加浏览器兼容前缀
-    require('autoprefixer')
-  ]
-}
-```
 
-#### package.json
+#### package.json 文件
 
 ```json
 {
@@ -170,29 +403,6 @@ module.exports = {
 }
 
 ```
-
-
-
-#### @babel/polyfill
-
-**js一些高级语法的支持**
-
-如：Es7中的includes() 方法
-
-```shell
-yarn add @babel/polyfill
-```
-
-需要使用高级js语法文件中引入：
-
-```js
-import '@babel/polyfill';
-
-// 引入@babel/polyfill打包后会帮我们自动在原型上添加实现该方法，如果没有引入打包后js文件中该方法原样输出
-'str'.includes();
-```
-
-
 
 
 

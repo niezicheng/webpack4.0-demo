@@ -36,7 +36,16 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js/,
+        test: /\.js$/,
+        use: {
+          loader: 'eslint-loader',
+          options: {
+            enforce: 'pre' // previous post[normal之后执行]
+          }
+        }
+      },
+      {
+        test: /\.js/, // normal 普通的loader
         use: {
           loader: 'babel-loader',
           options: { // 用babel-loader，将es6 -> es5，也可以将该设置在.babelrc文件中设置
