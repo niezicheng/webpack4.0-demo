@@ -32,6 +32,9 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: 'main.css',
     }),
+    // new webpack.ProvidePlugin({ // 在每个模块中注入 $
+    //   $: 'jquery',
+    // })
   ],
 
   externals: {
@@ -40,24 +43,22 @@ module.exports = {
 
   module: {
     rules: [
-      {
-        test: /\.html$/,
-        use: 'html-withimg-loader'
-      },
-      {
-        test: /\.(png|jpg|gif|svg)$/,
-        // 使用 file-loader 对于小图片也会进行 http 请求资源
-        // 使用 url-loader 限制图片大小小于多少使用 base4 进行转化， 大于使用 file-loader 请求加载
-        use: [{
-          loader: 'url-loader',
-          options: {
-            limit: 1024 * 10, // 10k以内的图片转Base64打包到js中
-            name: '[name].[hash:7].[ext]', // 打包的文件名
-            outputPath: 'images/',
-            esModule: false
-          }
-        }]
-      },
+      // {
+      //   test: require.resolve('jquery'),
+      //   loader: 'expose-loader',
+      //   options: {
+      //     exposes: ['$', 'jQuery'],
+      //   },
+      // },
+      // {
+      //   test: /\.js$/,
+      //   use: {
+      //     loader: 'eslint-loader',
+      //     options: {
+      //       enforce: 'pre' // previous post[normal之后执行]
+      //     }
+      //   }
+      // },
       {
         test: /\.js/, // normal 普通的loader
         use: {

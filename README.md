@@ -31,7 +31,7 @@ mode: 'production', // 生产环境
 
 #### 模块 loader
 
-##### babel-loader
+##### babel-loader js
 
 ```js
  // 打包后对匹配的js文件语法转换及提供语法支持
@@ -181,6 +181,56 @@ console.log($); // jQuery
 ```
 
 
+
+##### file-loader、url-loader
+
+**图片一般使用的三种方式：**
+1. js中创建图片
+```js
+import img from './image/my-head.jpg'; // 返回结果是一个新的图片地址
+console.log(require('./image/my-head.jpg')); // 返回对象中的 default 为图片 url
+let image = new Image();
+image.src = img; // 就是一个普通的字符串
+document.body.appendChild(image);
+```
+2. css中引入 background('url')
+
+3. 标签img 【结合**html-withimg-loader**使用】
+
+   ```js
+   <img src="" alt=""  />
+   ```
+
+
+```js
+// file-loader 默然会在内部生成一张图片到 build 目录下并把生成的图片 hash 名字返回回来
+// 使用 file-loader 对于(小)图片会进行 http 请求资源，增添请求次数影响性能
+// 使用 url-loader 限制图片小于多少字节时，使用 base4 进行转化【会增加打包后文件大小】， 大于时使用 file-loader 请求加载
+{
+    test: /\.(png|jpg|gif|svg)$/,
+   
+    
+    use: [{
+        loader: 'url-loader',
+        options: {
+            limit: 1024 * 10, // 10k以内的图片转Base64打包到js中
+            name: '[name].[hash:7].[ext]', // 打包的文件名
+            outputPath: 'images/',
+            esModule: false
+        }
+    }]
+},
+```
+
+###### html-withimg-loader
+
+```js
+// 将 <img /> 标签中的 src build后在 bundle 中src引入打包后的图片文件路径
+{
+    test: /\.html$/,
+    use: 'html-withimg-loader'
+},
+```
 
 
 
@@ -332,6 +382,24 @@ module.exports = {
     // loader
     module: {
         rules: [
+            // img 标签 src 打包后引入问题
+            {
+                test: /\.html$/,
+                use: 'html-withimg-loader'
+            },
+            // 处理图片问题
+            {
+                test: /\.(png|jpg|gif|svg)$/,
+                use: [{
+                    loader: 'url-loader',
+                    options: {
+                        limit: 1024 * 10, // 10k以内的图片转Base64打包到js中
+                        name: '[name].[hash:7].[ext]', // 打包的文件名
+                        outputPath: 'images/',
+                        esModule: false, // img标签 src 引入问题
+                    }
+                }]
+            },
             // 暴露第三方模块到全局对象中
             {
                 test: require.resolve('jquery'),
@@ -516,7 +584,17 @@ module.exports = {
 
   ```js
   // 引入第三方模块的三种方式
-      1、expose-loader 暴露到window
-      2、ProviderPlugin 给每个模块文件提供第三方模块
-      3、externals 引入不打包
+  1. expose-loader 暴露到window
+  2. ProviderPlugin 给每个模块文件提供第三方模块
+  3. externals 引入不打包
   ```
+
+- flie-loader@4.3.0中处理图片产生问题的三种处理方法
+
+  ```js
+  // img标签中 src 引入问题
+  1. 降低file-loader版本 
+  2. <img src="require('xxx').default"/>
+  3. 在webpack的file-loader配置项里，设置esModule为false
+  ```
+
